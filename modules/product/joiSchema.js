@@ -1,0 +1,45 @@
+
+const Joi = require('joi');
+
+module.exports = {
+  createValidation: Joi.object().keys({
+    categoryId: Joi.number().integer(),
+    brandId: Joi.number().integer(),
+    name: Joi.string(),
+    slug: Joi.string(),
+    sku: Joi.string(),
+    description: Joi.string(),
+    basePrice: Joi.number().integer(),
+    salePrice: Joi.number().integer(),
+    metalType: Joi.string(),
+    stoneType: Joi.string(),
+    weight: Joi.string(),
+    stock: Joi.number().integer(),
+    isTrending: Joi.boolean(),
+    isNewArrival: Joi.boolean(),
+    isBestSeller: Joi.boolean(),
+    isActive: Joi.boolean(),
+    created_at: Joi.date(),
+    updated_at: Joi.date(),
+  }),
+  updateValidation: Joi.object().keys({
+    categoryId: Joi.number().integer(),
+    brandId: Joi.number().integer(),
+    name: Joi.string(),
+    slug: Joi.string(),
+    sku: Joi.string(),
+    description: Joi.string(),
+    basePrice: Joi.number().integer(),
+    salePrice: Joi.number().integer(),
+    metalType: Joi.string(),
+    stoneType: Joi.string(),
+    weight: Joi.string(),
+    stock: Joi.number().integer(),
+    isTrending: Joi.boolean(),
+    isNewArrival: Joi.boolean(),
+    isBestSeller: Joi.boolean(),
+    isActive: Joi.boolean(),
+    created_at: Joi.date(),
+    updated_at: Joi.date(),
+  })
+};

@@ -1,74 +1,146 @@
 
 const { ProductService } = require("./service");
-const { sendSuccess, sendFail } = require("../../middleware/response");
 
-exports.create = async (req, res, next) => {
+function buildListResponse(data, page, limit) {
+  const totalPages =
+    limit > 0 ? Math.max(0, Math.ceil(data.count / limit)) : 0;
+  return {
+    status: 200,
+    message: "Products fetched successfully",
+    data: {
+      count: data.count,
+      currentPage: page,
+      totalPages,
+      rows: data.rows,
+    },
+  };
+}
+
+exports.create = async (req, res) => {
   try {
     const data = await ProductService.create(req.body);
-    return sendSuccess(res, 201, data);
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.get = async (req, res, next) => {
-  try {
-    const data = await ProductService.findOne({
-      where: {
-        id: req.params.id,
-      },
+    return res.status(201).json({
+      status: 201,
+      message: "Product created successfully",
+      data,
     });
-    if (!data) {
-      return sendFail(res, 404, "Product not found");
-    }
-    return sendSuccess(res, 200, data);
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: err?.message || err,
+    });
   }
 };
 
-exports.update = async (req, res, next) => {
+exports.get = async (req, res) => {
   try {
+    const data = await ProductService.findOneWithDetails(req.params.id);
+    if (!data) {
+      return res.status(404).json({
+        status: 404,
+        message: "Product not found",
+      });
+    }
+    return res.status(200).json({
+      status: 200,
+      data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: error?.message || error,
+    });
+  }
+};
+
+exports.update = async (req, res) => {
+  try {
+    const id = req.params.id;
     const [affected] = await ProductService.update(req.body, {
-      where: {
-        id: req.params.id,
-      },
+      where: { id },
     });
     if (!affected) {
-      return sendFail(res, 404, "Product not found");
+      return res.status(404).json({
+        status: 404,
+        message: "Product not found",
+      });
     }
-    return sendSuccess(res, 200, { affected });
+    const data = await ProductService.findOneWithDetails(id);
+    if (!data) {
+      return res.status(404).json({
+        status: 404,
+        message: "Product not found",
+      });
+    }
+    return res.status(200).json({
+      status: 200,
+      message: "Product updated successfully",
+      data,
+    });
   } catch (error) {
-    next(error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: error?.message || error,
+    });
   }
 };
 
-exports.remove = async (req, res, next) => {
+exports.remove = async (req, res) => {
   try {
     const deleted = await ProductService.remove({
-      where: {
-        id: req.params.id
-      },
+      where: { id: req.params.id },
     });
     if (!deleted) {
-      return sendFail(res, 404, "Product not found");
+      return res.status(404).json({
+        status: 404,
+        message: "Product not found",
+      });
     }
-    return sendSuccess(res, 200, null);
+    return res.status(200).json({
+      status: 200,
+      message: "Product deleted successfully",
+    });
   } catch (error) {
-    next(error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: error?.message || error,
+    });
   }
 };
 
-exports.getAll = async (req, res, next) => {
+exports.getAll = async (req, res) => {
   try {
-    const data = await ProductService.findAndCountAll({
-      // Implement your query logic here if needed
+    const { where, order, limit, offset, page } =
+      ProductService.parseProductListQuery(req.query);
+
+    const data = await ProductService.findAllWithDetails({
+      where,
+      limit,
+      offset,
+      order,
     });
-    if (!data || (typeof data.count === "number" && data.count === 0)) {
-      return sendFail(res, 404, "No products found");
+
+    if (!data || typeof data.count !== "number") {
+      return res.status(500).json({
+        status: 500,
+        message: "Invalid list response",
+      });
     }
-    return sendSuccess(res, 200, data);
+
+    const body = buildListResponse(data, page, limit);
+    if (data.count === 0) {
+      body.message = "No products found";
+    }
+    return res.status(200).json(body);
   } catch (err) {
-    next(err);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error",
+      error: err?.message || err,
+    });
   }
 };

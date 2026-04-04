@@ -2,6 +2,7 @@
 "use strict";
 
 const { authMiddleware } = require("../../middleware/auth");
+const { requireRole } = require("../../middleware/requireRole");
 const { joiValidator } = require("../../middleware/joiValidator");
 const {
   create,
@@ -17,15 +18,34 @@ const {
 
 const router = require("express").Router();
 
-router.use(authMiddleware);
+const adminOrSuperAdmin = requireRole(["superAdmin", "admin"]);
 
-router.route("/")
-  .post(joiValidator(createValidation), create)
-  .get(getAll);
+// Public: anyone can list and view products
+router.get("/", getAll);
+router.get("/:id", get);
 
-router.route("/:id")
-  .patch(joiValidator(updateValidation), update)
-  .get(get)
-  .delete(remove);
+// Protected: only superAdmin and admin can create, update, delete
+router.post(
+  "/",
+  authMiddleware,
+  adminOrSuperAdmin,
+  joiValidator(createValidation),
+  create
+);
+
+router.put(
+  "/:id",
+  authMiddleware,
+  adminOrSuperAdmin,
+  joiValidator(updateValidation),
+  update
+);
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  adminOrSuperAdmin,
+  remove
+);
 
 module.exports = router;

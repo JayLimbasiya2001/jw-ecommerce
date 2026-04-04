@@ -86,6 +86,46 @@ function brandAttachPath(req, res, next) {
   next();
 }
 
+// Product variant — optional main image (field name: image)
+const productVariantStorage = createStorage("productvariant");
+const productVariantUpload = multer({
+  storage: productVariantStorage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).single("image");
+
+function productVariantAttachPath(req, res, next) {
+  if (req.file) {
+    req.body.image = "/uploads/productvariant/" + req.file.filename;
+  }
+  next();
+}
+
+// Product / variant gallery: single field `image` OR multiple `images` (same folder)
+const productImageStorage = createStorage("productimage");
+const MAX_PRODUCT_IMAGES = 25;
+const productImageUpload = multer({
+  storage: productImageStorage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).fields([
+  { name: "image", maxCount: 1 },
+  { name: "images", maxCount: MAX_PRODUCT_IMAGES },
+]);
+
+function productImageAttachPaths(req, res, next) {
+  const base = "/uploads/productimage/";
+  if (req.files) {
+    if (req.files.image && req.files.image[0]) {
+      req.body.image = base + req.files.image[0].filename;
+    }
+    if (req.files.images && req.files.images.length) {
+      req.body.images = req.files.images.map((f) => base + f.filename);
+    }
+  }
+  next();
+}
+
 module.exports = {
   heroSliderUpload,
   heroSliderAttachPaths,
@@ -93,4 +133,9 @@ module.exports = {
   categoryAttachPath,
   brandUpload,
   brandAttachPath,
+  productVariantUpload,
+  productVariantAttachPath,
+  productImageUpload,
+  productImageAttachPaths,
+  MAX_PRODUCT_IMAGES,
 };

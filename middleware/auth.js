@@ -19,7 +19,7 @@ const authMiddleware = (req, res, next) => {
     next();
   } catch (err) {
     return res.status(401).json({
-      status: "fail",
+      status: 401,
       message: "Invalid or expired token"
     });
   }

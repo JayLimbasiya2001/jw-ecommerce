@@ -9,7 +9,8 @@ const joiValidator = (schema, options = {}) => {
     const { error, value } = schema.validate(req.body, {
       abortEarly: false,
       allowUnknown: true,
-      stripUnknown: true
+      stripUnknown: true,
+      convert: true,
     });
 
     if (error) {

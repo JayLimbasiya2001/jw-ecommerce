@@ -2,6 +2,7 @@
 "use strict";
 
 const { authMiddleware } = require("../../middleware/auth");
+const { requireRole } = require("../../middleware/requireRole");
 const { joiValidator } = require("../../middleware/joiValidator");
 const {
   create,
@@ -17,15 +18,32 @@ const {
 
 const router = require("express").Router();
 
-router.use(authMiddleware);
+const adminOrSuperAdmin = requireRole(["superAdmin", "admin"]);
 
-router.route("/")
-  .post(joiValidator(createValidation), create)
-  .get(getAll);
+router.get("/", getAll);
+router.get("/:id", get);
 
-router.route("/:id")
-  .patch(joiValidator(updateValidation), update)
-  .get(get)
-  .delete(remove);
+router.post(
+  "/",
+  authMiddleware,
+  adminOrSuperAdmin,
+  joiValidator(createValidation),
+  create
+);
+
+router.patch(
+  "/:id",
+  authMiddleware,
+  adminOrSuperAdmin,
+  joiValidator(updateValidation),
+  update
+);
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  adminOrSuperAdmin,
+  remove
+);
 
 module.exports = router;

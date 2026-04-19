@@ -97,7 +97,7 @@ const SORTABLE = new Set(["id", "name", "salePrice", "basePrice", "stock", "crea
 
 /**
  * Maps GET /api/products query params → Sequelize where, order, limit, offset, page.
- * Filters: categoryId, brandId, isActive, search|q|name|related (ILIKE name/slug/sku/description),
+ * Filters: categoryId, brandId, isActive, isNewArrival, search|q|name|related (ILIKE name/slug/sku/description),
  * minPrice, maxPrice, priceField (salePrice|basePrice, default salePrice).
  * Pagination: page (default 1), limit (default 20, max 100).
  * Sort: sortBy, sortOrder (asc|desc).
@@ -116,6 +116,10 @@ function parseProductListQuery(query = {}) {
   if (query.isActive !== undefined && query.isActive !== "") {
     const v = query.isActive;
     where.isActive = v === "true" || v === true || v === "1" || v === 1;
+  }
+  if (query.isNewArrival !== undefined && query.isNewArrival !== "") {
+    const v = query.isNewArrival;
+    where.isNewArrival = v === "true" || v === true || v === "1" || v === 1;
   }
 
   const rawSearch = query.search ?? query.q ?? query.name ?? query.related;

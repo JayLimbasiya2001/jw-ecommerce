@@ -1,10 +1,19 @@
-
 "use strict";
 
-const { Op } = require("sequelize");
+const { Sequelize } = require("sequelize");
 const { ProductvariantService } = require("./service");
 const { ProductimageService } = require("../productimage/service");
 const ProductImage = require("../productimage/model");
+const Attribute = require("../attribute/model");
+const AttributeValue = require("../attributevalue/model");
+const VariantAttribute = require("../variantattribute/model");
+const {
+  resolvePairsForPersist,
+  findVariantWithSameSignature,
+  replaceVariantAttributes,
+  displayNameFromPairs,
+  attachAttributesMapToVariant,
+} = require("./attributes");
 
 function coerceBool(val) {
   if (val === true || val === "true" || val === 1 || val === "1") return true;
@@ -20,14 +29,6 @@ function buildPayload(body, isUpdate = false) {
     if (!Number.isNaN(n)) payload.productId = n;
   }
   if (body.name !== undefined) payload.name = String(body.name).trim();
-  if (body.color !== undefined) {
-    const c = body.color == null || body.color === "" ? null : String(body.color).trim();
-    payload.color = c;
-  }
-  if (body.size !== undefined) {
-    const s = body.size == null || body.size === "" ? null : String(body.size).trim();
-    payload.size = s;
-  }
   if (body.sku !== undefined) payload.sku = String(body.sku).trim();
   if (body.price !== undefined) {
     const n = parseInt(body.price, 10);
@@ -41,25 +42,18 @@ function buildPayload(body, isUpdate = false) {
   if (isActive !== undefined) payload.isActive = isActive;
   if (!isUpdate && payload.isActive === undefined) payload.isActive = true;
 
-  // Real-world label: "Red / M" when name omitted; else fall back to sku
-  if (!isUpdate) {
-    if (!payload.name || String(payload.name).trim() === "") {
-      const parts = [payload.color, payload.size].filter(
-        (x) => x != null && String(x).trim() !== ""
-      );
-      if (parts.length) {
-        payload.name = parts.join(" / ");
-      } else if (payload.sku) {
-        payload.name = String(payload.sku);
-      }
-    }
-  }
-
   return payload;
 }
 
+async function enrichVariantPlain(instance) {
+  if (!instance) return null;
+  const plain = instance.get({ plain: true });
+  attachAttributesMapToVariant(plain);
+  return plain;
+}
+
 async function findWithImages(id) {
-  return ProductvariantService.findOne({
+  const row = await ProductvariantService.findOne({
     where: { id },
     include: [
       {
@@ -69,8 +63,27 @@ async function findWithImages(id) {
         separate: true,
         order: [["rank", "ASC"]],
       },
+      {
+        model: VariantAttribute,
+        as: "variantAttributes",
+        required: false,
+        separate: true,
+        include: [
+          {
+            model: Attribute,
+            as: "attribute",
+            attributes: ["id", "key", "name"],
+          },
+          {
+            model: AttributeValue,
+            as: "attributeValue",
+            attributes: ["id", "value"],
+          },
+        ],
+      },
     ],
   });
+  return enrichVariantPlain(row);
 }
 
 async function upsertPrimaryVariantImage(variantId, productId, imagePath, label) {
@@ -110,38 +123,65 @@ exports.create = async (req, res) => {
       });
     }
 
-    const colorKey =
-      payload.color != null && String(payload.color).trim() !== ""
-        ? String(payload.color).trim()
-        : null;
-    const sizeKey =
-      payload.size != null && String(payload.size).trim() !== ""
-        ? String(payload.size).trim()
-        : null;
-    if (colorKey != null && sizeKey != null) {
-      const existing = await ProductvariantService.findOne({
-        where: {
-          productId: payload.productId,
-          color: colorKey,
-          size: sizeKey,
-        },
+    const pairResult = await resolvePairsForPersist(req.body, null, false);
+    if (!pairResult.ok) {
+      return res.status(400).json({
+        status: 400,
+        message: pairResult.message,
       });
-      if (existing) {
-        return res.status(409).json({
-          status: 409,
-          message: `A variant already exists for this product with color "${colorKey}" and size "${sizeKey}".`,
-        });
-      }
     }
 
-    const variant = await ProductvariantService.create(payload);
+    const skuTaken = await ProductvariantService.findOne({
+      where: { sku: payload.sku },
+    });
+    if (skuTaken) {
+      return res.status(409).json({
+        status: 409,
+        message: `SKU "${payload.sku}" is already in use.`,
+      });
+    }
+
+    const dup = await findVariantWithSameSignature(
+      payload.productId,
+      pairResult.pairs,
+      null
+    );
+    if (dup) {
+      return res.status(409).json({
+        status: 409,
+        message:
+          "A variant with the same attribute combination already exists for this product.",
+      });
+    }
+
+    if (!payload.name || payload.name === "") {
+      payload.name = await displayNameFromPairs(pairResult.pairs, payload.sku);
+    }
+
+    let variant;
+    try {
+      variant = await ProductvariantService.create(payload);
+    } catch (err) {
+      if (
+        err.name === "SequelizeUniqueConstraintError" ||
+        err instanceof Sequelize.UniqueConstraintError
+      ) {
+        return res.status(409).json({
+          status: 409,
+          message: `SKU "${payload.sku}" is already in use.`,
+        });
+      }
+      throw err;
+    }
+
+    await replaceVariantAttributes(variant.id, pairResult.pairs);
 
     if (req.body.image) {
       await ProductimageService.create({
         productId: variant.productId,
         variantId: variant.id,
         image: String(req.body.image).trim(),
-        altText: payload.name,
+        altText: variant.name,
         isPrimary: true,
         rank: 0,
       });
@@ -195,43 +235,66 @@ exports.update = async (req, res) => {
     }
 
     const payload = buildPayload(req.body, true);
-    const nextColor =
-      payload.color !== undefined ? payload.color : current.color;
-    const nextSize = payload.size !== undefined ? payload.size : current.size;
-    const nc =
-      nextColor != null && String(nextColor).trim() !== ""
-        ? String(nextColor).trim()
-        : null;
-    const ns =
-      nextSize != null && String(nextSize).trim() !== ""
-        ? String(nextSize).trim()
-        : null;
-    if (nc != null && ns != null) {
-      const conflict = await ProductvariantService.findOne({
-        where: {
-          productId: current.productId,
-          color: nc,
-          size: ns,
-          id: { [Op.ne]: id },
-        },
+
+    const pairResult = await resolvePairsForPersist(req.body, current, true);
+    if (!pairResult.ok) {
+      return res.status(400).json({
+        status: 400,
+        message: pairResult.message,
       });
-      if (conflict) {
+    }
+
+    if (payload.sku !== undefined && payload.sku !== current.get("sku")) {
+      const skuTaken = await ProductvariantService.findOne({
+        where: { sku: payload.sku },
+      });
+      if (skuTaken) {
         return res.status(409).json({
           status: 409,
-          message: `Another variant already uses color "${nc}" and size "${ns}" for this product.`,
+          message: `SKU "${payload.sku}" is already in use.`,
         });
       }
     }
 
-    const [affected] = await ProductvariantService.update(payload, {
-      where: { id },
-    });
-    if (!affected) {
-      return res.status(404).json({
-        status: 404,
-        message: "Product variant not found",
+    const productId = payload.productId !== undefined ? payload.productId : current.productId;
+
+    const dup = await findVariantWithSameSignature(
+      productId,
+      pairResult.pairs,
+      Number(id)
+    );
+    if (dup) {
+      return res.status(409).json({
+        status: 409,
+        message:
+          "Another variant with the same attribute combination exists for this product.",
       });
     }
+
+    try {
+      const [affected] = await ProductvariantService.update(payload, {
+        where: { id },
+      });
+      if (!affected) {
+        return res.status(404).json({
+          status: 404,
+          message: "Product variant not found",
+        });
+      }
+    } catch (err) {
+      if (
+        err.name === "SequelizeUniqueConstraintError" ||
+        err instanceof Sequelize.UniqueConstraintError
+      ) {
+        return res.status(409).json({
+          status: 409,
+          message: `SKU "${payload.sku ?? current.get("sku")}" is already in use.`,
+        });
+      }
+      throw err;
+    }
+
+    await replaceVariantAttributes(Number(id), pairResult.pairs);
 
     if (req.body.image) {
       const variant = await ProductvariantService.findOne({ where: { id } });
@@ -261,8 +324,13 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
   try {
+    const vid = req.params.id;
+    await VariantAttribute.destroy({
+      where: { variantId: vid },
+      force: true,
+    });
     const deleted = await ProductvariantService.remove({
-      where: { id: req.params.id },
+      where: { id: vid },
     });
     if (!deleted) {
       return res.status(404).json({
@@ -292,7 +360,7 @@ exports.getAll = async (req, res) => {
       if (!Number.isNaN(n)) where.productId = n;
     }
 
-    const data = await ProductvariantService.findAndCountAll({
+    const rows = await ProductvariantService.findAndCountAll({
       where,
       include: [
         {
@@ -302,11 +370,38 @@ exports.getAll = async (req, res) => {
           separate: true,
           order: [["rank", "ASC"]],
         },
+        {
+          model: VariantAttribute,
+          as: "variantAttributes",
+          required: false,
+          separate: true,
+          include: [
+            {
+              model: Attribute,
+              as: "attribute",
+              attributes: ["id", "key", "name"],
+            },
+            {
+              model: AttributeValue,
+              as: "attributeValue",
+              attributes: ["id", "value"],
+            },
+          ],
+        },
       ],
       order: [["id", "ASC"]],
     });
 
-    if (!data || (typeof data.count === "number" && data.count === 0)) {
+    const count = typeof rows.count === "number" ? rows.count : rows.rows?.length ?? 0;
+    const plainRows = (rows.rows || []).map((r) => {
+      const p = r.get({ plain: true });
+      attachAttributesMapToVariant(p);
+      return p;
+    });
+
+    const data = { count, rows: plainRows };
+
+    if (!plainRows.length) {
       return res.status(404).json({
         status: 404,
         message: "No product variants found",

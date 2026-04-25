@@ -1,4 +1,3 @@
-
 "use strict";
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/db");
@@ -6,9 +5,10 @@ const sequelize = require("../../config/db");
 const product = require("../product/model");
 
 /**
- * One row = one sellable SKU (inventory, price, images).
- * Color/size matrix (e.g. Red→4,5,6 and Yellow→4,5 only) is modeled as multiple rows
- * sharing the same productId with different `color` + `size`; see `variantsByColor` on product GET.
+ * One row = one sellable SKU (price, stock, sku, images).
+ * Options (color, size, purity, weight, …) are dynamic via `variant_attributes` → `attributes` + `attribute_values`.
+ *
+ * Sync uses `alter: false` so legacy DBs aren’t mutated by Sequelize; manage column drops/adds via migrations if needed.
  */
 const productvariant = sequelize.define(
   "productvariant",
@@ -27,17 +27,10 @@ const productvariant = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    color: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    size: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
     sku: {
       type: DataTypes.STRING,
       allowNull: false,
+      /** Unique enforced in API; add DB UNIQUE after deduping legacy SKU rows if needed. */
     },
     price: {
       type: DataTypes.INTEGER,
@@ -81,5 +74,36 @@ product.hasMany(productvariant, {
 });
 productvariant.belongsTo(product);
 
-productvariant.sync({ alter: true });
+const Attribute = require("../attribute/model");
+const AttributeValue = require("../attributevalue/model");
+const VariantAttribute = require("../variantattribute/model");
+
+productvariant.hasMany(VariantAttribute, {
+  foreignKey: "variantId",
+  as: "variantAttributes",
+  onDelete: "CASCADE",
+});
+VariantAttribute.belongsTo(productvariant, {
+  foreignKey: "variantId",
+  onDelete: "CASCADE",
+});
+VariantAttribute.belongsTo(Attribute, { foreignKey: "attributeId", as: "attribute" });
+VariantAttribute.belongsTo(AttributeValue, {
+  foreignKey: "attributeValueId",
+  as: "attributeValue",
+});
+
+if (AttributeValue.attributeTablesReady) {
+  AttributeValue.attributeTablesReady
+    .then(() => VariantAttribute.sync({ alter: true }))
+    .catch((err) => {
+      console.error("variantAttribute sync failed:", err?.message || err);
+    });
+} else {
+  VariantAttribute.sync({ alter: true }).catch((err) => {
+    console.error("variantAttribute sync failed:", err?.message || err);
+  });
+}
+
+productvariant.sync({ alter: false });
 module.exports = productvariant;

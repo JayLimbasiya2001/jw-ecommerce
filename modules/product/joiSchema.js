@@ -1,5 +1,23 @@
+const Joi = require("joi");
 
-const Joi = require('joi');
+/** One SKU line: reserved keys + any extra keys become dynamic attributes (color, size, …). */
+const variantCreateItem = Joi.object()
+  .keys({
+    sku: Joi.string().optional(),
+    price: Joi.number().integer().optional(),
+    stock: Joi.number().integer().optional(),
+    name: Joi.string().optional(),
+    isActive: Joi.boolean().optional(),
+    image: Joi.string().optional(),
+    attributeValueIds: Joi.array().items(Joi.number().integer()).optional(),
+    attributes: Joi.object()
+      .pattern(
+        Joi.string(),
+        Joi.alternatives().try(Joi.string(), Joi.number(), Joi.boolean())
+      )
+      .optional(),
+  })
+  .unknown(true);
 
 module.exports = {
   createValidation: Joi.object().keys({
@@ -21,6 +39,8 @@ module.exports = {
     isActive: Joi.boolean(),
     created_at: Joi.date(),
     updated_at: Joi.date(),
+    /** When set, creates SKUs in the same transaction. Example: `[{ color: "red", size: "M", price: 500, stock: 5 }]` */
+    variants: Joi.array().items(variantCreateItem).optional(),
   }),
   updateValidation: Joi.object().keys({
     categoryId: Joi.number().integer(),
@@ -41,5 +61,5 @@ module.exports = {
     isActive: Joi.boolean(),
     created_at: Joi.date(),
     updated_at: Joi.date(),
-  })
+  }),
 };

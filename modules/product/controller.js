@@ -25,10 +25,11 @@ exports.create = async (req, res) => {
       data,
     });
   } catch (err) {
-    return res.status(500).json({
-      status: 500,
-      message: "Internal server error",
-      error: err?.message || err,
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      status: statusCode,
+      message: err.message || "Internal server error",
+      ...(statusCode === 500 && err?.message ? { error: err.message } : {}),
     });
   }
 };

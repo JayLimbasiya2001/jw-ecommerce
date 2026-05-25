@@ -109,19 +109,24 @@ const productImageUpload = multer({
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 }).fields([
-  { name: "image", maxCount: 1 },
+  { name: "image", maxCount: MAX_PRODUCT_IMAGES },
   { name: "images", maxCount: MAX_PRODUCT_IMAGES },
 ]);
 
 function productImageAttachPaths(req, res, next) {
   const base = "/uploads/productimage/";
+  const paths = [];
   if (req.files) {
-    if (req.files.image && req.files.image[0]) {
-      req.body.image = base + req.files.image[0].filename;
+    if (req.files.image && req.files.image.length) {
+      paths.push(...req.files.image.map((f) => base + f.filename));
     }
     if (req.files.images && req.files.images.length) {
-      req.body.images = req.files.images.map((f) => base + f.filename);
+      paths.push(...req.files.images.map((f) => base + f.filename));
     }
+  }
+  if (paths.length) {
+    req.body.images = paths;
+    req.body.image = paths[0];
   }
   next();
 }

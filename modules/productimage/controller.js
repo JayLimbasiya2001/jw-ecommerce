@@ -2,6 +2,7 @@
 "use strict";
 
 const { ProductimageService } = require("./service");
+const ProductVariant = require("../productvariant/model");
 
 function coerceBool(val) {
   if (val === true || val === "true" || val === 1 || val === "1") return true;
@@ -16,16 +17,24 @@ function buildPayload(body, isUpdate = false) {
     const n = parseInt(body.productId, 10);
     if (!Number.isNaN(n)) payload.productId = n;
   }
-  if (body.variantId !== undefined && body.variantId !== "" && body.variantId !== null) {
+
+  const hasVariantField =
+    body.variantId !== undefined &&
+    body.variantId !== "" &&
+    body.variantId !== null;
+
+  if (hasVariantField) {
     const n = parseInt(body.variantId, 10);
-    payload.variantId = Number.isNaN(n) ? null : n;
+    if (!Number.isNaN(n)) payload.variantId = n;
   } else if (!isUpdate) {
     payload.variantId = null;
   } else if (body.variantId === null || body.variantId === "") {
     payload.variantId = null;
   }
 
-  if (body.image !== undefined) payload.image = String(body.image).trim();
+  if (body.image !== undefined && String(body.image).trim() !== "") {
+    payload.image = String(body.image).trim();
+  }
   if (body.images !== undefined && Array.isArray(body.images)) {
     payload.images = body.images.map((x) => String(x).trim()).filter(Boolean);
   }
@@ -39,71 +48,123 @@ function buildPayload(body, isUpdate = false) {
 
   if (!isUpdate) {
     if (payload.altText === undefined) payload.altText = "";
-    if (payload.isPrimary === undefined) payload.isPrimary = false;
     if (payload.rank === undefined) payload.rank = 0;
   }
 
   return payload;
 }
 
+/** Merge single `image` + `images[]` into one ordered list (no duplicates). */
+function collectImagePaths(payload) {
+  const paths = [];
+  if (Array.isArray(payload.images) && payload.images.length) {
+    paths.push(...payload.images);
+  }
+  if (payload.image) {
+    paths.push(payload.image);
+  }
+  const seen = new Set();
+  return paths.filter((p) => {
+    if (!p || seen.has(p)) return false;
+    seen.add(p);
+    return true;
+  });
+}
+
+/**
+ * - productId only → product main/gallery (variantId = null)
+ * - productId + variantId → images for that variant
+ */
+async function resolveUploadTarget(payload) {
+  if (!payload.productId) {
+    return {
+      ok: false,
+      status: 400,
+      message: "productId is required",
+    };
+  }
+
+  if (payload.variantId == null) {
+    return {
+      ok: true,
+      type: "product",
+      productId: payload.productId,
+      variantId: null,
+    };
+  }
+
+  const variant = await ProductVariant.findOne({
+    where: { id: payload.variantId, productId: payload.productId },
+  });
+  if (!variant) {
+    return {
+      ok: false,
+      status: 404,
+      message: `variantId ${payload.variantId} not found for productId ${payload.productId}`,
+    };
+  }
+
+  return {
+    ok: true,
+    type: "variant",
+    productId: payload.productId,
+    variantId: payload.variantId,
+  };
+}
+
+function resolveIsPrimary(index, total, payload) {
+  if (total > 1) return index === 0;
+  if (payload.isPrimary !== undefined) return Boolean(payload.isPrimary);
+  return true;
+}
+
 exports.create = async (req, res) => {
   try {
     const payload = buildPayload(req.body, false);
-    if (!payload.productId) {
-      return res.status(400).json({
-        status: 400,
-        message: "productId is required",
+    const target = await resolveUploadTarget(payload);
+    if (!target.ok) {
+      return res.status(target.status).json({
+        status: target.status,
+        message: target.message,
       });
     }
 
-    const paths = [];
-    if (Array.isArray(payload.images) && payload.images.length) {
-      paths.push(...payload.images);
-    }
-    if (payload.image) {
-      paths.push(payload.image);
-    }
-    if (!paths.length) {
+    const uniquePaths = collectImagePaths(payload);
+    if (!uniquePaths.length) {
       return res.status(400).json({
         status: 400,
         message:
-          "At least one image is required: upload field `image` or multiple `images`, or send `image` / `images` URLs in JSON.",
+          "At least one image is required. Use multipart field `images` (repeat for multiple) or `image`, or JSON `images` / `image` URLs.",
       });
     }
-
-    const seen = new Set();
-    const uniquePaths = paths.filter((p) => {
-      if (seen.has(p)) return false;
-      seen.add(p);
-      return true;
-    });
 
     const baseRank = Number.isFinite(payload.rank) ? payload.rank : 0;
     const created = [];
     for (let i = 0; i < uniquePaths.length; i++) {
-      const isPrimary =
-        uniquePaths.length > 1
-          ? i === 0
-          : Boolean(payload.isPrimary);
       const row = await ProductimageService.create({
-        productId: payload.productId,
-        variantId: payload.variantId ?? null,
+        productId: target.productId,
+        variantId: target.variantId,
         image: uniquePaths[i],
         altText: payload.altText || "",
-        isPrimary,
+        isPrimary: resolveIsPrimary(i, uniquePaths.length, payload),
         rank: baseRank + i,
       });
       created.push(row);
     }
 
-    const data =
-      created.length === 1
-        ? created[0]
-        : { count: created.length, rows: created };
-
+    const isVariant = target.type === "variant";
     return res.status(201).json({
       status: 201,
-      data,
+      message: isVariant
+        ? `${created.length} variant image(s) uploaded successfully`
+        : `${created.length} product image(s) uploaded successfully`,
+      data: {
+        type: target.type,
+        productId: target.productId,
+        variantId: target.variantId,
+        count: created.length,
+        rows: created,
+      },
     });
   } catch (err) {
     return res.status(500).json({

@@ -66,16 +66,50 @@ function sizeSortKey(a, b) {
   return String(a ?? "").localeCompare(String(b ?? ""), undefined, { numeric: true });
 }
 
+/** Primary image URL from productimage rows (isPrimary first, else lowest rank). */
+function pickPrimaryImageUrl(imageRows) {
+  if (!Array.isArray(imageRows) || imageRows.length === 0) return null;
+  const sorted = [...imageRows].sort(
+    (a, b) => (a.rank || 0) - (b.rank || 0) || (a.id || 0) - (b.id || 0)
+  );
+  const primary = sorted.find((x) => x.isPrimary);
+  const pick = primary || sorted[0];
+  return pick?.image ?? null;
+}
+
+function indexImagesByVariantId(allPlain) {
+  const byVariant = {};
+  for (const row of allPlain) {
+    if (row.variantId == null) continue;
+    if (!byVariant[row.variantId]) byVariant[row.variantId] = [];
+    byVariant[row.variantId].push(row);
+  }
+  return byVariant;
+}
+
+function mergeVariantImageRows(variants, allPlain) {
+  if (!Array.isArray(variants) || variants.length === 0) return;
+  const byVariant = indexImagesByVariantId(allPlain);
+  for (const v of variants) {
+    const fromDb = byVariant[v.id] || [];
+    if (!Array.isArray(v.images) || v.images.length === 0) {
+      v.images = fromDb;
+    }
+  }
+}
+
 function toClientVariantShape(variantPlain) {
   const v = { ...variantPlain };
   attachAttributesMapToVariant(v);
   const attrs = v.attributes || {};
   return {
     ...attrs,
+    variantId: v.id,
     sku: v.sku,
     price: v.price,
     stock: v.stock,
     isActive: v.isActive,
+    image: pickPrimaryImageUrl(v.images),
   };
 }
 
@@ -149,8 +183,10 @@ function attachGalleryImagesToProducts(rowsPlain, allImageRows) {
     const { galleryImages, allProductImages } = splitProductImages(list);
     p.galleryImages = galleryImages;
     p.allProductImages = allProductImages;
+    p.image = pickPrimaryImageUrl(galleryImages);
     if (Array.isArray(p.variants)) {
       p.variants.sort((a, b) => (a.id || 0) - (b.id || 0));
+      mergeVariantImageRows(p.variants, list);
     }
     attachVariantsByColor(p);
   }
@@ -439,8 +475,10 @@ exports.ProductService = {
     const plain = row.get({ plain: true });
     plain.galleryImages = galleryImages;
     plain.allProductImages = allProductImages;
+    plain.image = pickPrimaryImageUrl(galleryImages);
     if (Array.isArray(plain.variants)) {
       plain.variants.sort((a, b) => (a.id || 0) - (b.id || 0));
+      mergeVariantImageRows(plain.variants, allPlain);
     }
     attachVariantsByColor(plain);
     return plain;

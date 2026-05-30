@@ -1,8 +1,11 @@
-
 "use strict";
 
-const { authMiddleware } = require("../../middleware/auth");
+const { adminModule } = require("../../middleware/adminAccess");
 const { joiValidator } = require("../../middleware/joiValidator");
+const {
+  instagramReelsUpload,
+  instagramReelsAttachPath,
+} = require("../../middleware/upload");
 const {
   create,
   getAll,
@@ -17,15 +20,34 @@ const {
 
 const router = require("express").Router();
 
-router.use(authMiddleware);
+const withReelUpload = (req, res, next) => {
+  const isMultipart = (req.get("content-type") || "").includes("multipart/form-data");
+  if (!isMultipart) return next();
+  instagramReelsUpload(req, res, (err) => {
+    if (err) return next(err);
+    instagramReelsAttachPath(req, res, next);
+  });
+};
 
-router.route("/")
-  .post(joiValidator(createValidation), create)
-  .get(getAll);
+router.get("/", getAll);
+router.get("/:id", get);
 
-router.route("/:id")
-  .patch(joiValidator(updateValidation), update)
-  .get(get)
-  .delete(remove);
+router.post(
+  "/",
+  ...adminModule("instagram_reels"),
+  withReelUpload,
+  joiValidator(createValidation),
+  create
+);
+
+router.patch(
+  "/:id",
+  ...adminModule("instagram_reels"),
+  withReelUpload,
+  joiValidator(updateValidation),
+  update
+);
+
+router.delete("/:id", ...adminModule("instagram_reels"), remove);
 
 module.exports = router;

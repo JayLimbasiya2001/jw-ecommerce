@@ -131,6 +131,36 @@ function productImageAttachPaths(req, res, next) {
   next();
 }
 
+// Blog featured image (field name: featuredImage)
+const blogStorage = createStorage("blog");
+const blogUpload = multer({
+  storage: blogStorage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).single("featuredImage");
+
+function blogAttachPath(req, res, next) {
+  if (req.file) {
+    req.body.featuredImage = "/uploads/blog/" + req.file.filename;
+  }
+  next();
+}
+
+// Instagram reel thumbnail only (video is a URL in body)
+const instagramReelsStorage = createStorage("instagramreels");
+const instagramReelsUpload = multer({
+  storage: instagramReelsStorage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).single("thumbnail");
+
+function instagramReelsAttachPath(req, res, next) {
+  if (req.file) {
+    req.body.thumbnail = "/uploads/instagramreels/" + req.file.filename;
+  }
+  next();
+}
+
 module.exports = {
   heroSliderUpload,
   heroSliderAttachPaths,
@@ -143,4 +173,8 @@ module.exports = {
   productImageUpload,
   productImageAttachPaths,
   MAX_PRODUCT_IMAGES,
+  blogUpload,
+  blogAttachPath,
+  instagramReelsUpload,
+  instagramReelsAttachPath,
 };

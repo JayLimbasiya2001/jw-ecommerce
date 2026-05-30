@@ -7,26 +7,36 @@ const {
   getAll,
   update,
   get,
-  remove
+  remove,
+  validateByCode,
 } = require("./controller");
 const {
   createValidation,
-  updateValidation
+  updateValidation,
 } = require("./joiSchema");
 
 const router = require("express").Router();
 
-router.use(...adminModule("coupons"));
+/** Public — validate coupon at checkout */
+router.get("/validate/:code", validateByCode);
 
-router
-  .route("/")
-  .post(joiValidator(createValidation), create)
-  .get(getAll);
+router.get("/", ...adminModule("coupons"), getAll);
+router.get("/:id", ...adminModule("coupons"), get);
 
-router
-  .route("/:id")
-  .patch(joiValidator(updateValidation), update)
-  .get(get)
-  .delete(remove);
+router.post(
+  "/",
+  ...adminModule("coupons"),
+  joiValidator(createValidation),
+  create
+);
+
+router.patch(
+  "/:id",
+  ...adminModule("coupons"),
+  joiValidator(updateValidation),
+  update
+);
+
+router.delete("/:id", ...adminModule("coupons"), remove);
 
 module.exports = router;

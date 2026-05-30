@@ -12,84 +12,92 @@ const blog = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       autoIncrement: true,
-      primaryKey: true
+      primaryKey: true,
     },
     authorId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
     },
     title: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
     },
     slug: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
     },
     content: {
       type: DataTypes.TEXT,
-      allowNull: false
+      allowNull: false,
     },
     excerpt: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
     featuredImage: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
     category: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
     tags: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
     status: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: "draft"
+      defaultValue: "draft",
     },
     isFeatured: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: false
+      defaultValue: false,
     },
     viewCount: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
     },
     metaTitle: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
     metaDescription: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
     published_at: {
       type: DataTypes.DATE,
-      allowNull: true
+      allowNull: true,
     },
     created_at: {
       type: DataTypes.DATE,
-      allowNull: false
+      allowNull: false,
+      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
     },
     updated_at: {
       type: DataTypes.DATE,
-      allowNull: false
-    }
+      allowNull: false,
+      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
-    paranoid: true
+    paranoid: true,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    deletedAt: "deleted_at",
   }
 );
 
-user.hasMany(blog, { foreignKey: { allowNull: false } });
+user.hasMany(blog, { foreignKey: "authorId" });
 blog.belongsTo(user, { foreignKey: "authorId" });
 
-blog.sync({ alter: true });
 module.exports = blog;
-

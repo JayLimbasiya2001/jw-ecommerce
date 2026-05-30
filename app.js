@@ -5,11 +5,6 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-const sequelize = require("./config/db");
-
-require("./modules/customer/model");
-require("./modules/adminpermission/model");
-
 // Module routers
 const userRouter = require("./modules/user");
 const addressRouter = require("./modules/address");
@@ -26,6 +21,8 @@ const ordersRouter = require("./modules/orders");
 const orderItemsRouter = require("./modules/orderitems");
 const wishlistRouter = require("./modules/wishlist");
 const reviewsRouter = require("./modules/reviews");
+const blogRouter = require("./modules/blog");
+const couponRouter = require("./modules/coupon");
 const authRouter = require("./modules/auth");
 const adminRouter = require("./modules/admin");
 
@@ -56,6 +53,8 @@ app.use("/api/attributes", attributeRouter);
 app.use("/api/attribute-values", attributeValueRouter);
 app.use("/api/hero-sliders", heroSliderRouter);
 app.use("/api/instagram-reels", instagramReelsRouter);
+app.use("/api/blogs", blogRouter);
+app.use("/api/coupons", couponRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/order-items", orderItemsRouter);
 app.use("/api/wishlist", wishlistRouter);
@@ -71,19 +70,6 @@ app.use((err, req, res, next) => {
     message: err.message || "Internal server error",
   });
 });
-
-// Initialize database connection
-async function initDatabase() {
-  try {
-    await sequelize.authenticate();
-    console.log("Database connection established.");
-  } catch (err) {
-    const msg = err?.message || err?.code || String(err) || "Unknown error";
-    console.error("Unable to connect to the database:", msg);
-  }
-}
-
-initDatabase();
 
 module.exports = app;
 

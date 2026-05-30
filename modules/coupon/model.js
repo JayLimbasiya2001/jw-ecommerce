@@ -10,70 +10,83 @@ const coupon = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       autoIncrement: true,
-      primaryKey: true
+      primaryKey: true,
     },
     couponCode: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      unique: true,
     },
     description: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: true,
     },
     discountType: {
       type: DataTypes.ENUM("percentage", "fixed"),
-      allowNull: false
+      allowNull: false,
     },
     discountValue: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false
+      allowNull: false,
     },
     minPurchaseAmount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
     },
     maxDiscountAmount: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: true
+      allowNull: true,
     },
     usageLimit: {
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: true,
     },
     usageCount: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
     },
     perUserLimit: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 1
+      defaultValue: 1,
     },
     isActive: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: true
+      defaultValue: true,
     },
     validFrom: {
       type: DataTypes.DATE,
-      allowNull: true
+      allowNull: true,
     },
     validUntil: {
       type: DataTypes.DATE,
-      allowNull: true
+      allowNull: true,
     },
     created_at: {
       type: DataTypes.DATE,
-      allowNull: false
-    }
+      allowNull: false,
+      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
-    paranoid: true
+    paranoid: true,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    deletedAt: "deleted_at",
   }
 );
 
-coupon.sync({ alter: true });
 module.exports = coupon;
-

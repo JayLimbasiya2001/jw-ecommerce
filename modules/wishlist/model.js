@@ -4,7 +4,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/db");
 
 
-const user = require("../user/model")
+const customer = require("../customer/model");
 const product = require("../product/model")
 
 const wishlist = sequelize.define(
@@ -16,7 +16,7 @@ const wishlist = sequelize.define(
             autoIncrement: true,
             primaryKey: true,
         },
-        userId: {
+        customerId: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
@@ -38,8 +38,8 @@ const wishlist = sequelize.define(
     }
 );
 
-user.hasMany(wishlist,{foreignKey: {allowNull: false}} );
-wishlist.belongsTo(user)
+customer.hasMany(wishlist, { foreignKey: { allowNull: false } });
+wishlist.belongsTo(customer);
         
 product.hasMany(wishlist,{foreignKey: {allowNull: false}} );
 wishlist.belongsTo(product);

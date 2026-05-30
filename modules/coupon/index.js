@@ -1,6 +1,6 @@
 "use strict";
 
-const { authMiddleware } = require("../../middleware/auth");
+const { adminModule } = require("../../middleware/adminAccess");
 const { joiValidator } = require("../../middleware/joiValidator");
 const {
   create,
@@ -16,7 +16,7 @@ const {
 
 const router = require("express").Router();
 
-router.use(authMiddleware);
+router.use(...adminModule("coupons"));
 
 router
   .route("/")
@@ -30,4 +30,3 @@ router
   .delete(remove);
 
 module.exports = router;
-

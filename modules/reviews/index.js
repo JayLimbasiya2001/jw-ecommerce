@@ -1,6 +1,10 @@
 "use strict";
 
 const { authMiddleware } = require("../../middleware/auth");
+const { requireCustomer } = require("../../middleware/requireCustomer");
+const { requireStaff } = require("../../middleware/requireStaff");
+const { refreshStaffModules } = require("../../middleware/refreshStaffModules");
+const { requireModule } = require("../../middleware/requireModule");
 const { joiValidator } = require("../../middleware/joiValidator");
 const {
   create,
@@ -16,18 +20,24 @@ const {
 
 const router = require("express").Router();
 
-router.use(authMiddleware);
+const adminReviews = [
+  authMiddleware,
+  requireStaff,
+  refreshStaffModules,
+  requireModule("reviews"),
+];
 
-router
-  .route("/")
-  .post(joiValidator(createValidation), create)
-  .get(getAll);
+router.post(
+  "/",
+  authMiddleware,
+  requireCustomer,
+  joiValidator(createValidation),
+  create
+);
 
-router
-  .route("/:id")
-  .patch(joiValidator(updateValidation), update)
-  .get(get)
-  .delete(remove);
+router.get("/", ...adminReviews, getAll);
+router.get("/:id", ...adminReviews, get);
+router.patch("/:id", ...adminReviews, joiValidator(updateValidation), update);
+router.delete("/:id", ...adminReviews, remove);
 
 module.exports = router;
-

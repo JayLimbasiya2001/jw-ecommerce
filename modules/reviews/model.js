@@ -5,7 +5,7 @@ const sequelize = require("../../config/db");
 
 
 const orders = require("../orders/model")
-const user = require("../user/model")
+const customer = require("../customer/model");
 const product = require("../product/model")
 
 const reviews = sequelize.define(
@@ -21,7 +21,7 @@ const reviews = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
-        userId: {
+        customerId: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
@@ -65,8 +65,8 @@ const reviews = sequelize.define(
     }
 );
 
-user.hasMany(reviews, { foreignKey: "userId" });
-reviews.belongsTo(user, { foreignKey: "userId" });
+customer.hasMany(reviews, { foreignKey: "customerId" });
+reviews.belongsTo(customer, { foreignKey: "customerId" });
 
 product.hasMany(reviews, { foreignKey: "productId" });
 reviews.belongsTo(product, { foreignKey: "productId" });

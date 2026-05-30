@@ -4,12 +4,14 @@ require("dotenv").config();
 
 const app = require("./app");
 const { ensureDatabase } = require("./config/initDb");
+const { seedSuperAdminIfNeeded } = require("./config/seedSuperAdmin");
 
 const PORT = process.env.PORT || 4000;
 
 async function start() {
   try {
     await ensureDatabase();
+    await seedSuperAdminIfNeeded();
   } catch (err) {
     console.error("Database init failed:", err?.message || err?.code || err);
     if (process.env.NODE_ENV !== "production") {

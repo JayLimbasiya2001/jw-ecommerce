@@ -1,6 +1,7 @@
 "use strict";
 
 const { authMiddleware } = require("../../middleware/auth");
+const { requireCustomer } = require("../../middleware/requireCustomer");
 const { joiValidator } = require("../../middleware/joiValidator");
 const {
   create,
@@ -16,7 +17,7 @@ const {
 
 const router = require("express").Router();
 
-router.use(authMiddleware);
+router.use(authMiddleware, requireCustomer);
 
 router
   .route("/")

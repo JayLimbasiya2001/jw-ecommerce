@@ -3,7 +3,7 @@ const Joi = require('joi');
 
 module.exports = {
   createValidation: Joi.object().keys({
-    userId: Joi.number().integer(),
+    customerId: Joi.number().integer(),
     orderStatus: Joi.string(),
     paymentStatus: Joi.string(),
     paymentMethod: Joi.string(),
@@ -20,7 +20,7 @@ module.exports = {
     updated_at: Joi.date(),
   }),
   updateValidation: Joi.object().keys({
-    userId: Joi.number().integer(),
+    customerId: Joi.number().integer(),
     orderStatus: Joi.string(),
     paymentStatus: Joi.string(),
     paymentMethod: Joi.string(),

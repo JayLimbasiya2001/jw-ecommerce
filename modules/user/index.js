@@ -1,7 +1,7 @@
 
 "use strict";
 
-const { authMiddleware } = require("../../middleware/auth");
+const { superAdminOnly } = require("../../middleware/adminAccess");
 const { joiValidator } = require("../../middleware/joiValidator");
 const {
   create,
@@ -17,7 +17,7 @@ const {
 
 const router = require("express").Router();
 
-router.use(authMiddleware);
+router.use(...superAdminOnly());
 
 router.route("/")
   .post(joiValidator(createValidation), create)

@@ -7,6 +7,9 @@ const cors = require("cors");
 
 const sequelize = require("./config/db");
 
+require("./modules/customer/model");
+require("./modules/adminpermission/model");
+
 // Module routers
 const userRouter = require("./modules/user");
 const addressRouter = require("./modules/address");
@@ -24,12 +27,14 @@ const orderItemsRouter = require("./modules/orderitems");
 const wishlistRouter = require("./modules/wishlist");
 const reviewsRouter = require("./modules/reviews");
 const authRouter = require("./modules/auth");
+const adminRouter = require("./modules/admin");
 
 const path = require("path");
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Health check
@@ -39,6 +44,7 @@ app.get("/health", (req, res) => {
 
 // API routes
 app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/users", userRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/categories", categoryRouter);

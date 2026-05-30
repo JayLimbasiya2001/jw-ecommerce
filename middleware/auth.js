@@ -15,6 +15,14 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "dev_secret");
+    if (!decoded.accountType) {
+      const role = String(decoded.role || "").toLowerCase();
+      if (role === "admin" || role === "superadmin") {
+        decoded.accountType = "staff";
+      } else if (role === "customer") {
+        decoded.accountType = "customer";
+      }
+    }
     req.user = decoded;
     next();
   } catch (err) {

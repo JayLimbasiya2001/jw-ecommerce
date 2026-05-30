@@ -1,8 +1,7 @@
 
 "use strict";
 
-const { authMiddleware } = require("../../middleware/auth");
-const { requireRole } = require("../../middleware/requireRole");
+const { adminModule } = require("../../middleware/adminAccess");
 const { joiValidator } = require("../../middleware/joiValidator");
 const { categoryUpload, categoryAttachPath } = require("../../middleware/upload");
 const {
@@ -19,10 +18,6 @@ const {
 
 const router = require("express").Router();
 
-// Roles allowed to manage categories
-const adminOrSuperAdmin = requireRole(["superAdmin", "admin"]);
-
-// Run multer only for multipart/form-data; otherwise just continue (JSON body)
 const withCategoryUpload = (req, res, next) => {
   const isMultipart = (req.get("content-type") || "").includes("multipart/form-data");
   if (!isMultipart) return next();
@@ -33,15 +28,12 @@ const withCategoryUpload = (req, res, next) => {
   });
 };
 
-// Public: anyone can view categories
 router.get("/", getAll);
 router.get("/:id", get);
 
-// Protected: only superAdmin and admin can create, update, delete
 router.post(
   "/",
-  authMiddleware,
-  adminOrSuperAdmin,
+  ...adminModule("categories"),
   withCategoryUpload,
   joiValidator(createValidation),
   create
@@ -49,18 +41,12 @@ router.post(
 
 router.put(
   "/:id",
-  authMiddleware,
-  adminOrSuperAdmin,
+  ...adminModule("categories"),
   withCategoryUpload,
   joiValidator(updateValidation),
   update
 );
 
-router.delete(
-  "/:id",
-  authMiddleware,
-  adminOrSuperAdmin,
-  remove
-);
+router.delete("/:id", ...adminModule("categories"), remove);
 
 module.exports = router;

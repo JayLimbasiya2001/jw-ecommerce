@@ -6,7 +6,7 @@ exports.create = async (req, res, next) => {
   try {
     const payload = {
       ...req.body,
-      userId: req.user?.id || req.body.userId
+      customerId: req.user?.id || req.body.customerId
     };
     const data = await CartService.create(payload);
     res.status(201).json({
@@ -70,7 +70,7 @@ exports.getAll = async (req, res, next) => {
   try {
     const data = await CartService.findAndCountAll({
       where: {
-        userId: req.user?.id
+        customerId: req.user?.id
       }
     });
     res.status(200).json({

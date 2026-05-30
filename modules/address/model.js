@@ -4,7 +4,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/db");
 
 
-const user = require("../user/model")
+const customer = require("../customer/model");
 
 const address = sequelize.define(
     "address",
@@ -15,7 +15,7 @@ const address = sequelize.define(
             autoIncrement: true,
             primaryKey: true,
         },
-        userId: {
+        customerId: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
@@ -69,8 +69,8 @@ const address = sequelize.define(
     }
 );
 
-user.hasMany(address,{foreignKey: {allowNull: false}} );
-address.belongsTo(user)
+customer.hasMany(address, { foreignKey: { allowNull: false } });
+address.belongsTo(customer);
         
 address.sync({ alter: true });
 module.exports = address;

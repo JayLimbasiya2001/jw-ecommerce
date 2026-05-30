@@ -5,7 +5,7 @@ const Joi = require("joi");
 module.exports = {
   createValidation: Joi.object().keys({
     productId: Joi.number().integer().required(),
-    userId: Joi.number().integer().required(),
+    customerId: Joi.number().integer().required(),
     orderId: Joi.number().integer().allow(null),
     rating: Joi.number().integer().min(1).max(5).required(),
     title: Joi.string().allow(null, ""),
@@ -17,7 +17,7 @@ module.exports = {
   }),
   updateValidation: Joi.object().keys({
     productId: Joi.number().integer(),
-    userId: Joi.number().integer(),
+    customerId: Joi.number().integer(),
     orderId: Joi.number().integer().allow(null),
     rating: Joi.number().integer().min(1).max(5),
     title: Joi.string().allow(null, ""),

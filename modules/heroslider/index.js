@@ -1,8 +1,7 @@
 
 "use strict";
 
-const { authMiddleware } = require("../../middleware/auth");
-const { requireRole } = require("../../middleware/requireRole");
+const { adminModule } = require("../../middleware/adminAccess");
 const { joiValidator } = require("../../middleware/joiValidator");
 const { heroSliderUpload, heroSliderAttachPaths } = require("../../middleware/upload");
 const {
@@ -19,10 +18,6 @@ const {
 
 const router = require("express").Router();
 
-// Only superAdmin and admin can create, update, delete
-const adminOrSuperAdmin = requireRole(["superAdmin", "admin"]);
-
-// Run multer for multipart so req.body gets form fields
 const withUpload = (req, res, next) => {
   const isMultipart = (req.get("content-type") || "").includes("multipart/form-data");
   if (isMultipart) {
@@ -35,27 +30,23 @@ const withUpload = (req, res, next) => {
   }
 };
 
-// Public: anyone can view (no login required)
 router.get("/", getAll);
 router.get("/:id", get);
 
-// Protected: only superAdmin and admin can upload, edit, delete
 router.post(
   "/",
-  authMiddleware,
-  adminOrSuperAdmin,
+  ...adminModule("hero_sliders"),
   withUpload,
   joiValidator(createValidation),
   create
 );
 router.patch(
   "/:id",
-  authMiddleware,
-  adminOrSuperAdmin,
+  ...adminModule("hero_sliders"),
   withUpload,
   joiValidator(updateValidation),
   update
 );
-router.delete("/:id", authMiddleware, adminOrSuperAdmin, remove);
+router.delete("/:id", ...adminModule("hero_sliders"), remove);
 
 module.exports = router;

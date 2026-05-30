@@ -3,7 +3,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/db");
 
-const user = require("../user/model");
+const customer = require("../customer/model");
 const product = require("../product/model");
 const productVariant = require("../productvariant/model");
 
@@ -16,7 +16,7 @@ const cart = sequelize.define(
       autoIncrement: true,
       primaryKey: true
     },
-    userId: {
+    customerId: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
@@ -47,8 +47,8 @@ const cart = sequelize.define(
   }
 );
 
-user.hasMany(cart, { foreignKey: { allowNull: false } });
-cart.belongsTo(user);
+customer.hasMany(cart, { foreignKey: { allowNull: false } });
+cart.belongsTo(customer);
 
 product.hasMany(cart, { foreignKey: { allowNull: false } });
 cart.belongsTo(product);

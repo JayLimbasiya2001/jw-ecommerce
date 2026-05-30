@@ -2,6 +2,7 @@
 "use strict";
 
 const { authMiddleware } = require("../../middleware/auth");
+const { allowCustomerOrStaffModule } = require("../../middleware/allowCustomerOrStaffModule");
 const { joiValidator } = require("../../middleware/joiValidator");
 const {
   create,
@@ -17,7 +18,7 @@ const {
 
 const router = require("express").Router();
 
-router.use(authMiddleware);
+router.use(authMiddleware, allowCustomerOrStaffModule("orders"));
 
 router.route("/")
   .post(joiValidator(createValidation), create)

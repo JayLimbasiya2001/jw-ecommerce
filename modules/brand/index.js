@@ -1,8 +1,7 @@
 
 "use strict";
 
-const { authMiddleware } = require("../../middleware/auth");
-const { requireRole } = require("../../middleware/requireRole");
+const { adminModule } = require("../../middleware/adminAccess");
 const { joiValidator } = require("../../middleware/joiValidator");
 const { brandUpload, brandAttachPath } = require("../../middleware/upload");
 const {
@@ -19,8 +18,6 @@ const {
 
 const router = require("express").Router();
 
-const adminOrSuperAdmin = requireRole(["superAdmin", "admin"]);
-
 const withBrandUpload = (req, res, next) => {
   const isMultipart = (req.get("content-type") || "").includes("multipart/form-data");
   if (!isMultipart) return next();
@@ -31,15 +28,12 @@ const withBrandUpload = (req, res, next) => {
   });
 };
 
-// Public view
 router.get("/", getAll);
 router.get("/:id", get);
 
-// Protected write
 router.post(
   "/",
-  authMiddleware,
-  adminOrSuperAdmin,
+  ...adminModule("brands"),
   withBrandUpload,
   joiValidator(createValidation),
   create
@@ -47,18 +41,12 @@ router.post(
 
 router.put(
   "/:id",
-  authMiddleware,
-  adminOrSuperAdmin,
+  ...adminModule("brands"),
   withBrandUpload,
   joiValidator(updateValidation),
   update
 );
 
-router.delete(
-  "/:id",
-  authMiddleware,
-  adminOrSuperAdmin,
-  remove
-);
+router.delete("/:id", ...adminModule("brands"), remove);
 
 module.exports = router;

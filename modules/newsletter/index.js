@@ -1,6 +1,9 @@
 "use strict";
 
 const { authMiddleware } = require("../../middleware/auth");
+const { requireStaff } = require("../../middleware/requireStaff");
+const { refreshStaffModules } = require("../../middleware/refreshStaffModules");
+const { requireModule } = require("../../middleware/requireModule");
 const { joiValidator } = require("../../middleware/joiValidator");
 const {
   create,
@@ -16,20 +19,18 @@ const {
 
 const router = require("express").Router();
 
-// You may want to keep subscribe public; protect listing with auth
 router.post("/", joiValidator(createValidation), create);
 
-router.use(authMiddleware);
+const adminNewsletter = [
+  authMiddleware,
+  requireStaff,
+  refreshStaffModules,
+  requireModule("newsletter"),
+];
 
-router
-  .route("/")
-  .get(getAll);
-
-router
-  .route("/:id")
-  .patch(joiValidator(updateValidation), update)
-  .get(get)
-  .delete(remove);
+router.get("/", ...adminNewsletter, getAll);
+router.get("/:id", ...adminNewsletter, get);
+router.patch("/:id", ...adminNewsletter, joiValidator(updateValidation), update);
+router.delete("/:id", ...adminNewsletter, remove);
 
 module.exports = router;
-

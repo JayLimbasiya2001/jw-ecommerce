@@ -4,7 +4,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/db");
 
 
-const user = require("../user/model")
+const customer = require("../customer/model");
 
 const orders = sequelize.define(
     "orders",
@@ -15,7 +15,7 @@ const orders = sequelize.define(
             autoIncrement: true,
             primaryKey: true,
         },
-        userId: {
+        customerId: {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
@@ -81,8 +81,8 @@ const orders = sequelize.define(
     }
 );
 
-user.hasMany(orders, { foreignKey: "userId" });
-orders.belongsTo(user);
+customer.hasMany(orders, { foreignKey: "customerId" });
+orders.belongsTo(customer);
 
 orders.sync({ alter: true });
 module.exports = orders;

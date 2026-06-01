@@ -131,6 +131,36 @@ function productImageAttachPaths(req, res, next) {
   next();
 }
 
+// Customer profile image (field name: profileImage)
+const customerStorage = createStorage("customer");
+const customerUpload = multer({
+  storage: customerStorage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).single("profileImage");
+
+function customerAttachPath(req, res, next) {
+  if (req.file) {
+    req.body.profileImage = "/uploads/customer/" + req.file.filename;
+  }
+  next();
+}
+
+// Newsletter post featured image
+const newsletterPostStorage = createStorage("newsletter");
+const newsletterPostUpload = multer({
+  storage: newsletterPostStorage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).single("featuredImage");
+
+function newsletterPostAttachPath(req, res, next) {
+  if (req.file) {
+    req.body.featuredImage = "/uploads/newsletter/" + req.file.filename;
+  }
+  next();
+}
+
 // Blog featured image (field name: featuredImage)
 const blogStorage = createStorage("blog");
 const blogUpload = multer({
@@ -173,6 +203,10 @@ module.exports = {
   productImageUpload,
   productImageAttachPaths,
   MAX_PRODUCT_IMAGES,
+  customerUpload,
+  customerAttachPath,
+  newsletterPostUpload,
+  newsletterPostAttachPath,
   blogUpload,
   blogAttachPath,
   instagramReelsUpload,

@@ -13,53 +13,11 @@ function stripStaffPassword(user) {
   return plain;
 }
 
+/** @deprecated Prefer POST /api/customers — same logic */
 exports.registerCustomer = async (req, res, next) => {
-  try {
-    const { email, password, name, phone } = req.body;
-    const normalizedEmail = String(email).trim().toLowerCase();
-
-    const existingStaff = await UserService.findOne({
-      where: { email: normalizedEmail },
-    });
-    if (existingStaff) {
-      return res.status(409).json({
-        status: "fail",
-        message: "Email already registered",
-      });
-    }
-
-    const existingCustomer = await CustomerService.findByEmail(normalizedEmail);
-    if (existingCustomer) {
-      return res.status(409).json({
-        status: "fail",
-        message: "Email already registered",
-      });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    const customer = await CustomerService.create({
-      email: normalizedEmail,
-      password: passwordHash,
-      name,
-      phone,
-      isVerified: false,
-    });
-
-    const token = signCustomerToken(customer);
-    const profile = CustomerService.stripPassword(customer);
-
-    res.status(201).json({
-      status: "success",
-      message: "Customer registered successfully",
-      data: {
-        token,
-        accountType: "customer",
-        customer: profile,
-      },
-    });
-  } catch (err) {
-    next(err);
-  }
+  req.user = undefined;
+  const { create } = require("../customer/controller");
+  return create(req, res, next);
 };
 
 exports.loginCustomer = async (req, res, next) => {

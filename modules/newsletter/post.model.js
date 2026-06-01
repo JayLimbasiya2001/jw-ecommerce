@@ -2,9 +2,10 @@
 
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/db");
+const user = require("../user/model");
 
-const customer = sequelize.define(
-  "customer",
+const newsletterPost = sequelize.define(
+  "newsletterPost",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -12,31 +13,39 @@ const customer = sequelize.define(
       autoIncrement: true,
       primaryKey: true,
     },
-    email: {
+    authorId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    slug: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
-    password: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    phone: {
+    excerpt: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    profileImage: {
+    content: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    featuredImage: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    isVerified: {
-      type: DataTypes.BOOLEAN,
+    status: {
+      type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: false,
+      defaultValue: "draft",
+    },
+    published_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     created_at: {
       type: DataTypes.DATE,
@@ -62,4 +71,7 @@ const customer = sequelize.define(
   }
 );
 
-module.exports = customer;
+user.hasMany(newsletterPost, { foreignKey: "authorId" });
+newsletterPost.belongsTo(user, { foreignKey: "authorId" });
+
+module.exports = newsletterPost;

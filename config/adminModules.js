@@ -13,6 +13,7 @@ const ADMIN_MODULES = [
   { key: "hero_sliders", name: "Hero Slider" },
   { key: "instagram_reels", name: "Instagram Reels" },
   { key: "newsletter", name: "Newsletter Management" },
+  { key: "customers", name: "Customer Management" },
   { key: "orders", name: "Order Management" },
   { key: "coupons", name: "Coupon Management" },
   { key: "blog", name: "Blog Management" },

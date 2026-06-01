@@ -18,5 +18,8 @@ exports.CustomerService = {
     const row = await Model.findByPk(id);
     return stripPassword(row);
   },
+  findAndCountAll: (conditions) => Model.findAndCountAll(conditions),
+  update: (data, conditions) => Model.update(data, conditions),
+  remove: (conditions) => Model.destroy(conditions),
   stripPassword,
 };

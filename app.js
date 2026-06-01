@@ -23,6 +23,8 @@ const wishlistRouter = require("./modules/wishlist");
 const reviewsRouter = require("./modules/reviews");
 const blogRouter = require("./modules/blog");
 const couponRouter = require("./modules/coupon");
+const customerRouter = require("./modules/customer");
+const newsletterRouter = require("./modules/newsletter");
 const authRouter = require("./modules/auth");
 const adminRouter = require("./modules/admin");
 
@@ -55,6 +57,8 @@ app.use("/api/hero-sliders", heroSliderRouter);
 app.use("/api/instagram-reels", instagramReelsRouter);
 app.use("/api/blogs", blogRouter);
 app.use("/api/coupons", couponRouter);
+app.use("/api/customers", customerRouter);
+app.use("/api/newsletters", newsletterRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/order-items", orderItemsRouter);
 app.use("/api/wishlist", wishlistRouter);

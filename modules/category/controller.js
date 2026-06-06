@@ -145,15 +145,19 @@ exports.getAll = async (req, res, next) => {
     const data = await CategoryService.findAndCountAll({
       // Implement your query logic here if needed
     });
-    if (!data || (typeof data.count === "number" && data.count === 0)) {
-      return res.status(404).json({
-        status: 404,
-        message: "No categories found",
+    if (!data) {
+      return res.status(500).json({
+        status: 500,
+        message: "Invalid list response",
       });
     }
+    const message =
+      data.count === 0
+        ? "No categories found"
+        : "Categories fetched successfully";
     return res.status(200).json({
       status: 200,
-      message: "Categories fetched successfully",
+      message,
       data,
     });
   } catch (err) {

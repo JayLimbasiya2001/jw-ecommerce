@@ -101,10 +101,30 @@ exports.remove = async (req, res, next) => {
   }
 };
 
+const { Op } = require("sequelize");
+
+function buildActiveHeroWhere(extra = {}) {
+  const now = new Date();
+  return {
+    isActive: true,
+    startDate: { [Op.lte]: now },
+    endDate: { [Op.gte]: now },
+    ...extra,
+  };
+}
+
 exports.getAll = async (req, res, next) => {
   try {
+    const activeOnly =
+      req.query.activeOnly === "true" ||
+      req.query.activeOnly === true ||
+      req.query.activeOnly === "1";
+
+    const where = activeOnly ? buildActiveHeroWhere() : undefined;
+
     const data = await HerosliderService.findAndCountAll({
-      // Implement your query logic here if needed
+      ...(where ? { where } : {}),
+      order: [["rank", "ASC"], ["id", "ASC"]],
     });
 
     res.status(200).json({

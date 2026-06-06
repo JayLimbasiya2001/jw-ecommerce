@@ -221,6 +221,14 @@ function parseProductListQuery(query = {}) {
     const v = query.isNewArrival;
     where.isNewArrival = v === "true" || v === true || v === "1" || v === 1;
   }
+  if (query.isBestSeller !== undefined && query.isBestSeller !== "") {
+    const v = query.isBestSeller;
+    where.isBestSeller = v === "true" || v === true || v === "1" || v === 1;
+  }
+  if (query.isTrending !== undefined && query.isTrending !== "") {
+    const v = query.isTrending;
+    where.isTrending = v === "true" || v === true || v === "1" || v === 1;
+  }
 
   const rawSearch = query.search ?? query.q ?? query.name ?? query.related;
   if (rawSearch != null && String(rawSearch).trim() !== "") {

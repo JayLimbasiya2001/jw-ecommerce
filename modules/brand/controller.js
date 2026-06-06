@@ -144,15 +144,17 @@ exports.getAll = async (req, res, next) => {
     const data = await BrandService.findAndCountAll({
       // Implement your query logic here if needed
     });
-    if (!data || (typeof data.count === "number" && data.count === 0)) {
-      return res.status(404).json({
-        status: 404,
-        message: "No brands found",
+    if (!data) {
+      return res.status(500).json({
+        status: 500,
+        message: "Invalid list response",
       });
     }
+    const message =
+      data.count === 0 ? "No brands found" : "Brands fetched successfully";
     return res.status(200).json({
       status: 200,
-      message: "Brands fetched successfully",
+      message,
       data,
     });
   } catch (err) {

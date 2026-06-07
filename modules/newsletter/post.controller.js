@@ -53,7 +53,11 @@ exports.create = async (req, res, next) => {
 
 exports.get = async (req, res, next) => {
   try {
-    const data = await NewsletterPostService.findOne({ where: { id: req.params.id } });
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ status: 400, message: "Invalid newsletter post id" });
+    }
+    const data = await NewsletterPostService.findOne({ where: { id } });
     if (!data) {
       return res.status(404).json({ status: 404, message: "Newsletter post not found" });
     }
@@ -61,6 +65,40 @@ exports.get = async (req, res, next) => {
       return res.status(404).json({ status: 404, message: "Newsletter post not found" });
     }
     return res.status(200).json({ status: 200, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getBySlug = async (req, res, next) => {
+  try {
+    const slug = String(req.params.slug || "").trim();
+    if (!slug) {
+      return res.status(400).json({ status: 400, message: "Invalid newsletter slug" });
+    }
+    const data = await NewsletterPostService.findOne({
+      where: { slug, status: "published" },
+    });
+    if (!data) {
+      return res.status(404).json({ status: 404, message: "Newsletter post not found" });
+    }
+    return res.status(200).json({ status: 200, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getSlugs = async (req, res, next) => {
+  try {
+    const rows = await NewsletterPostService.get({
+      where: { status: "published" },
+      attributes: ["slug"],
+      order: [["published_at", "DESC"]],
+    });
+    return res.status(200).json({
+      status: 200,
+      data: rows.map((row) => row.slug).filter(Boolean),
+    });
   } catch (err) {
     next(err);
   }

@@ -8,6 +8,8 @@ const {
   getAll,
   update,
   get,
+  getBySlug,
+  getSlugs,
   remove,
 } = require("./controller");
 const {
@@ -27,6 +29,8 @@ const withBlogUpload = (req, res, next) => {
 };
 
 router.get("/", getAll);
+router.get("/slugs", getSlugs);
+router.get("/by-slug/:slug", getBySlug);
 router.get("/:id", get);
 
 router.post(

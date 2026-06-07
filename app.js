@@ -27,6 +27,7 @@ const customerRouter = require("./modules/customer");
 const newsletterRouter = require("./modules/newsletter");
 const authRouter = require("./modules/auth");
 const adminRouter = require("./modules/admin");
+const storefrontRouter = require("./modules/storefront");
 
 const path = require("path");
 const app = express();
@@ -44,6 +45,7 @@ app.get("/health", (req, res) => {
 // API routes
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/storefront", storefrontRouter);
 app.use("/api/users", userRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/categories", categoryRouter);

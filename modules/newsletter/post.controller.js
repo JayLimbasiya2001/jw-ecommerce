@@ -3,6 +3,11 @@
 const { NewsletterPostService } = require("./post.service");
 const { parseNewsletterPostListQuery } = require("./post.listQuery");
 const { buildPaginatedResponse } = require("../../middleware/listPagination");
+const {
+  EDITORIAL_AUTHOR_INCLUDE,
+  flattenAuthor,
+  flattenAuthorList,
+} = require("../../lib/editorialAuthor");
 
 function buildPayload(body, isUpdate = false) {
   const payload = {};
@@ -78,11 +83,12 @@ exports.getBySlug = async (req, res, next) => {
     }
     const data = await NewsletterPostService.findOne({
       where: { slug, status: "published" },
+      include: [EDITORIAL_AUTHOR_INCLUDE],
     });
     if (!data) {
       return res.status(404).json({ status: 404, message: "Newsletter post not found" });
     }
-    return res.status(200).json({ status: 200, data });
+    return res.status(200).json({ status: 200, data: flattenAuthor(data) });
   } catch (err) {
     next(err);
   }
@@ -152,6 +158,7 @@ exports.getAll = async (req, res, next) => {
       limit,
       offset,
       distinct: true,
+      include: [EDITORIAL_AUTHOR_INCLUDE],
     });
     const count =
       typeof result?.count === "number"
@@ -160,7 +167,7 @@ exports.getAll = async (req, res, next) => {
           ? result.count.length
           : 0;
     const body = buildPaginatedResponse(
-      { count, rows: result?.rows ?? [] },
+      { count, rows: flattenAuthorList(result?.rows ?? []) },
       page,
       limit,
       count === 0 ? "No newsletter posts found" : "Newsletter posts fetched successfully"

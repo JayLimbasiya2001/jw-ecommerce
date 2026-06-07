@@ -3,6 +3,11 @@
 const { BlogService } = require("./service");
 const { parseBlogListQuery } = require("./listQuery");
 const { buildPaginatedResponse } = require("../../middleware/listPagination");
+const {
+  EDITORIAL_AUTHOR_INCLUDE,
+  flattenAuthor,
+  flattenAuthorList,
+} = require("../../lib/editorialAuthor");
 
 function coerceBool(val) {
   if (val === true || val === "true" || val === 1 || val === "1") return true;
@@ -103,11 +108,12 @@ exports.getBySlug = async (req, res, next) => {
     }
     const data = await BlogService.findOne({
       where: { slug, status: "published" },
+      include: [EDITORIAL_AUTHOR_INCLUDE],
     });
     if (!data) {
       return res.status(404).json({ status: 404, message: "Blog not found" });
     }
-    return res.status(200).json({ status: 200, data });
+    return res.status(200).json({ status: 200, data: flattenAuthor(data) });
   } catch (err) {
     next(err);
   }
@@ -171,9 +177,10 @@ exports.getAll = async (req, res, next) => {
       order,
       limit,
       offset,
+      include: [EDITORIAL_AUTHOR_INCLUDE],
     });
     const body = buildPaginatedResponse(
-      data,
+      { count: data.count, rows: flattenAuthorList(data.rows) },
       page,
       limit,
       data?.count === 0 ? "No blogs found" : "Blogs fetched successfully"

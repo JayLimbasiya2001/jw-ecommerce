@@ -49,6 +49,7 @@ const contactInquiry = sequelize.define(
     },
   },
   {
+    tableName: "contact_inquiries",
     paranoid: true,
     timestamps: true,
     createdAt: "created_at",
@@ -56,5 +57,7 @@ const contactInquiry = sequelize.define(
     deletedAt: "deleted_at",
   }
 );
+
+contactInquiry.sync({ alter: true });
 
 module.exports = contactInquiry;

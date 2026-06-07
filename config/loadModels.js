@@ -32,6 +32,7 @@ function loadModels() {
     "modules/blog/model",
     "modules/sitesetting/model",
     "modules/paymentgateway/model",
+    "modules/contact/model",
   ];
 
   files.forEach((rel) => {

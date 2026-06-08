@@ -3,17 +3,12 @@
 const Joi = require("joi");
 
 module.exports = {
-  createValidation: Joi.object().keys({
-    customerId: Joi.number().integer().optional(),
+  createValidation: Joi.object({
     productId: Joi.number().integer().required(),
-    variantId: Joi.number().integer().allow(null),
+    variantId: Joi.number().integer().allow(null).optional(),
     quantity: Joi.number().integer().min(1).default(1),
-    created_at: Joi.date(),
-    updated_at: Joi.date()
-  }),
-  updateValidation: Joi.object().keys({
-    quantity: Joi.number().integer().min(1),
-    updated_at: Joi.date()
-  })
+  }).options({ stripUnknown: true }),
+  updateValidation: Joi.object({
+    quantity: Joi.number().integer().min(1).required(),
+  }).options({ stripUnknown: true }),
 };
-

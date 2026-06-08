@@ -25,7 +25,6 @@ router.route("/")
   .get(getAll);
 
 router.route("/:id")
-  .patch(joiValidator(updateValidation), update)
   .get(get)
   .delete(remove);
 

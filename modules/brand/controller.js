@@ -1,5 +1,6 @@
-
 const { BrandService } = require("./service");
+const { parseBrandListQuery } = require("./listQuery");
+const { buildPaginatedResponse } = require("../../middleware/listPagination");
 
 function coerceBool(val) {
   if (val === true || val === "true" || val === 1 || val === "1") return true;
@@ -141,25 +142,17 @@ exports.remove = async (req, res, next) => {
 
 exports.getAll = async (req, res, next) => {
   try {
-    const data = await BrandService.findAndCountAll({
-      // Implement your query logic here if needed
-    });
-    if (!data || (typeof data.count === "number" && data.count === 0)) {
-      return res.status(404).json({
-        status: 404,
-        message: "No brands found",
-      });
-    }
-    return res.status(200).json({
-      status: 200,
-      message: "Brands fetched successfully",
-      data,
-    });
+    const { where, order, limit, offset, page } = parseBrandListQuery(req.query);
+    const result = await BrandService.findAndCountAll({ where, order, limit, offset });
+    const count = typeof result?.count === "number" ? result.count : 0;
+    const body = buildPaginatedResponse(
+      { count, rows: result?.rows ?? [] },
+      page,
+      limit,
+      count === 0 ? "No brands found" : "Brands fetched successfully"
+    );
+    return res.status(200).json(body);
   } catch (err) {
-    return res.status(500).json({
-      status: 500,
-      message: "Internal server error",
-      error: err,
-    });
+    next(err);
   }
 };

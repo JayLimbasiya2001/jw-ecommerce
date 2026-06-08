@@ -74,5 +74,4 @@ reviews.belongsTo(product, { foreignKey: "productId" });
 orders.hasMany(reviews, { foreignKey: "orderId" });
 reviews.belongsTo(orders, { foreignKey: "orderId" });
 
-reviews.sync({ alter: true });
 module.exports = reviews;

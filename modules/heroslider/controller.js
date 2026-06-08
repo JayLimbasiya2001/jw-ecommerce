@@ -1,6 +1,8 @@
 "use strict";
 
 const { HerosliderService } = require("./service");
+const { parseHeroSliderListQuery } = require("./listQuery");
+const { buildPaginatedResponse } = require("../../middleware/listPagination");
 
 function coerceBool(val) {
   if (val === true || val === "true" || val === 1) return true;
@@ -103,14 +105,16 @@ exports.remove = async (req, res, next) => {
 
 exports.getAll = async (req, res, next) => {
   try {
-    const data = await HerosliderService.findAndCountAll({
-      // Implement your query logic here if needed
-    });
-
-    res.status(200).json({
-      status: 200,
-      data,
-    });
+    const { where, order, limit, offset, page } = parseHeroSliderListQuery(req.query);
+    const result = await HerosliderService.findAndCountAll({ where, order, limit, offset });
+    const count = typeof result?.count === "number" ? result.count : 0;
+    const body = buildPaginatedResponse(
+      { count, rows: result?.rows ?? [] },
+      page,
+      limit,
+      count === 0 ? "No hero sliders found" : "Hero sliders fetched successfully"
+    );
+    return res.status(200).json(body);
   } catch (err) {
     next(err);
   }

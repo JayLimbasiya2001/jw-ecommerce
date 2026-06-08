@@ -35,15 +35,25 @@ const cart = sequelize.define(
     },
     created_at: {
       type: DataTypes.DATE,
-      allowNull: false
+      allowNull: false,
+      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
     },
     updated_at: {
       type: DataTypes.DATE,
-      allowNull: false
-    }
+      allowNull: false,
+      defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
-    paranoid: true
+    paranoid: true,
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+    deletedAt: "deleted_at",
   }
 );
 
@@ -53,9 +63,8 @@ cart.belongsTo(customer);
 product.hasMany(cart, { foreignKey: { allowNull: false } });
 cart.belongsTo(product);
 
-productVariant.hasMany(cart, { foreignKey: { allowNull: true } });
-cart.belongsTo(productVariant, { foreignKey: "variantId" });
+productVariant.hasMany(cart, { foreignKey: "variantId" });
+cart.belongsTo(productVariant, { foreignKey: "variantId", as: "variant" });
 
-cart.sync({ alter: true });
 module.exports = cart;
 

@@ -70,19 +70,28 @@ const orders = sequelize.define(
         created_at: {
             type: DataTypes.DATE,
             allowNull: false,
+            defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
         },
         updated_at: {
             type: DataTypes.DATE,
             allowNull: false,
-        }
+            defaultValue: sequelize.literal("CURRENT_TIMESTAMP"),
+        },
+        deleted_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
     },
     {
         paranoid: true,
+        timestamps: true,
+        createdAt: "created_at",
+        updatedAt: "updated_at",
+        deletedAt: "deleted_at",
     }
 );
 
 customer.hasMany(orders, { foreignKey: "customerId" });
 orders.belongsTo(customer);
 
-orders.sync({ alter: true });
 module.exports = orders;

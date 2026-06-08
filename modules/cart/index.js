@@ -8,27 +8,21 @@ const {
   getAll,
   update,
   get,
-  remove
+  remove,
+  clear,
 } = require("./controller");
-const {
-  createValidation,
-  updateValidation
-} = require("./joiSchema");
+const { createValidation, updateValidation } = require("./joiSchema");
 
 const router = require("express").Router();
 
 router.use(authMiddleware, requireCustomer);
 
-router
-  .route("/")
-  .post(joiValidator(createValidation), create)
-  .get(getAll);
+router.post("/", joiValidator(createValidation), create);
+router.get("/", getAll);
+router.delete("/clear", clear);
 
-router
-  .route("/:id")
-  .patch(joiValidator(updateValidation), update)
-  .get(get)
-  .delete(remove);
+router.get("/:id", get);
+router.patch("/:id", joiValidator(updateValidation), update);
+router.delete("/:id", remove);
 
 module.exports = router;
-

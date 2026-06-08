@@ -27,7 +27,7 @@ const orderitems = sequelize.define(
         },
         variantId: {
             type: DataTypes.INTEGER,
-            allowNull: false,
+            allowNull: true,
         },
         name: {
             type: DataTypes.STRING,
@@ -63,7 +63,7 @@ const orderitems = sequelize.define(
     }
 );
 
-orders.hasMany(orderitems, { foreignKey: "orderId" });
+orders.hasMany(orderitems, { foreignKey: "orderId", as: "items" });
 orderitems.belongsTo(orders, { foreignKey: "orderId" });
 
 product.hasMany(orderitems, { foreignKey: "productId" });
@@ -72,5 +72,4 @@ orderitems.belongsTo(product, { foreignKey: "productId" });
 productvariant.hasMany(orderitems, { foreignKey: "variantId" });
 orderitems.belongsTo(productvariant, { foreignKey: "variantId" });
 
-orderitems.sync({ alter: true });
 module.exports = orderitems;

@@ -1,31 +1,12 @@
-
 "use strict";
 
-const { authMiddleware } = require("../../middleware/auth");
+const { adminModule } = require("../../middleware/adminAccess");
 const { joiValidator } = require("../../middleware/joiValidator");
-const {
-  create,
-  getAll,
-  update,
-  get,
-  remove,
-} = require("./controller");
-const {
-  createValidation,
-  updateValidation,
-} = require("./joiSchema");
-
+const { getAll, get } = require("./controller");
 const router = require("express").Router();
 
-router.use(authMiddleware);
-
-router.route("/")
-  .post(joiValidator(createValidation), create)
-  .get(getAll);
-
-router.route("/:id")
-  .patch(joiValidator(updateValidation), update)
-  .get(get)
-  .delete(remove);
+/** Line items are created at checkout; staff can list/view via orders module */
+router.get("/", ...adminModule("orders"), getAll);
+router.get("/:id", ...adminModule("orders"), get);
 
 module.exports = router;

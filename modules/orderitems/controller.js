@@ -1,76 +1,47 @@
+"use strict";
 
-const {OrderitemsService} = require("./service");
+const { OrderitemsService } = require("./service");
+const Product = require("../product/model");
+const ProductVariant = require("../productvariant/model");
+const Order = require("../orders/model");
 
-exports.create = async (req, res, next) => {
+exports.get = async (req, res, next) => {
   try {
-    const data = await OrderitemsService.create(req.body);
-    res.status(201).json({
-      status: "success",
-      data
+    const data = await OrderitemsService.findOne({
+      where: { id: req.params.id },
+      include: [
+        { model: Order, attributes: ["id", "customerId", "orderStatus"] },
+        { model: Product, attributes: ["id", "name", "slug"] },
+        { model: ProductVariant, required: false, attributes: ["id", "name", "sku"] },
+      ],
     });
+    if (!data) {
+      return res.status(404).json({ status: 404, message: "Order item not found" });
+    }
+    return res.status(200).json({ status: 200, data });
   } catch (err) {
     next(err);
   }
 };
 
-exports.get = async (req, res, next) => {
-  try {
-    const data = await OrderitemsService.get({
-      where: {
-        id: req.params.id,
-      },
-    });
-
-    res.status(200).send({
-      status: "success",
-      data,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-exports.update = async (req, res, next) => {
-  try {
-    const data = await OrderitemsService.update(req.body, {
-      where: {
-        id: req.params.id,
-      },
-    });
-
-    res.status(203).send({
-      status: "success",
-      data
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-exports.remove = async (req, res, next) => {
-  try {
-    const data = await OrderitemsService.remove({
-      where: {
-        id: req.params.id
-      },
-    });
-    res.status(200).send({
-      status: "success",
-      data,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 exports.getAll = async (req, res, next) => {
   try {
+    const where = {};
+    if (req.query.orderId) {
+      where.orderId = parseInt(req.query.orderId, 10);
+    }
     const data = await OrderitemsService.findAndCountAll({
-      // Implement your query logic here if needed
+      where,
+      include: [
+        { model: Product, attributes: ["id", "name"] },
+        { model: ProductVariant, required: false, attributes: ["id", "sku"] },
+      ],
+      order: [["id", "DESC"]],
+      limit: Math.min(parseInt(req.query.limit, 10) || 50, 100),
+      offset: 0,
     });
-
-    res.status(200).json({
-      status: "success",
+    return res.status(200).json({
+      status: 200,
       data,
     });
   } catch (err) {

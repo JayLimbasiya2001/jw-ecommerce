@@ -1,5 +1,13 @@
+"use strict";
 
 const { Op } = require("sequelize");
+const {
+  parseListQuery,
+  searchWhere,
+  coerceBoolQuery,
+  parseIdListQuery,
+  parseIntRangeQuery,
+} = require("../../middleware/listPagination");
 const sequelize = require("../../config/db");
 const Model = require("./model");
 const ProductVariant = require("../productvariant/model");
@@ -205,22 +213,51 @@ const SORTABLE = new Set(["id", "name", "salePrice", "basePrice", "stock", "crea
 function parseProductListQuery(query = {}) {
   const where = {};
 
-  if (query.categoryId != null && query.categoryId !== "") {
-    const n = parseInt(query.categoryId, 10);
-    if (!Number.isNaN(n)) where.categoryId = n;
+  const categoryIds =
+    parseIdListQuery(query.categoryIds) ||
+    parseIdListQuery(query.categoryId) ||
+    (query.categoryId != null && query.categoryId !== ""
+      ? parseIdListQuery(String(query.categoryId))
+      : null);
+  if (categoryIds) {
+    where.categoryId = categoryIds.length === 1 ? categoryIds[0] : { [Op.in]: categoryIds };
   }
-  if (query.brandId != null && query.brandId !== "") {
-    const n = parseInt(query.brandId, 10);
-    if (!Number.isNaN(n)) where.brandId = n;
+
+  const brandIds =
+    parseIdListQuery(query.brandIds) ||
+    parseIdListQuery(query.brandId) ||
+    (query.brandId != null && query.brandId !== ""
+      ? parseIdListQuery(String(query.brandId))
+      : null);
+  if (brandIds) {
+    where.brandId = brandIds.length === 1 ? brandIds[0] : { [Op.in]: brandIds };
   }
-  if (query.isActive !== undefined && query.isActive !== "") {
-    const v = query.isActive;
-    where.isActive = v === "true" || v === true || v === "1" || v === 1;
+
+  const isActive = coerceBoolQuery(query.isActive);
+  if (isActive !== undefined) where.isActive = isActive;
+
+  const isNewArrival = coerceBoolQuery(query.isNewArrival);
+  if (isNewArrival !== undefined) where.isNewArrival = isNewArrival;
+
+  const isTrending = coerceBoolQuery(query.isTrending);
+  if (isTrending !== undefined) where.isTrending = isTrending;
+
+  const isBestSeller = coerceBoolQuery(query.isBestSeller);
+  if (isBestSeller !== undefined) where.isBestSeller = isBestSeller;
+
+  if (query.metalType != null && String(query.metalType).trim() !== "") {
+    where.metalType = String(query.metalType).trim();
   }
-  if (query.isNewArrival !== undefined && query.isNewArrival !== "") {
-    const v = query.isNewArrival;
-    where.isNewArrival = v === "true" || v === true || v === "1" || v === 1;
+  if (query.stoneType != null && String(query.stoneType).trim() !== "") {
+    where.stoneType = String(query.stoneType).trim();
   }
+
+  const inStock = coerceBoolQuery(query.inStock);
+  if (inStock === true) where.stock = { [Op.gt]: 0 };
+  if (inStock === false) where.stock = 0;
+
+  const stockRange = parseIntRangeQuery(query, "stock", { minKey: "minStock", maxKey: "maxStock" });
+  if (stockRange) where.stock = stockRange;
 
   const rawSearch = query.search ?? query.q ?? query.name ?? query.related;
   if (rawSearch != null && String(rawSearch).trim() !== "") {

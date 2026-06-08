@@ -2,8 +2,8 @@
 const Model = require("./model");
 
 exports.OrdersService = {
-    create: async (data) => {
-        return Model.create(data);
+    create: async (data, options) => {
+        return Model.create(data, options);
     },
 
     get: async (conditions) => {

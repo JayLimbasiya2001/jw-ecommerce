@@ -29,8 +29,8 @@ exports.OrderitemsService = {
         return Model.count(condition);
     },
 
-    bulkCreate: async (data) => {
-        return Model.bulkCreate(data);
+    bulkCreate: async (data, options) => {
+        return Model.bulkCreate(data, options);
     },
 
     findOne: async (conditions) => {

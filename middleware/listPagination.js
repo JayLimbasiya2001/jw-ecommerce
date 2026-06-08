@@ -68,9 +68,58 @@ function coerceBoolQuery(val) {
   return undefined;
 }
 
+/**
+ * Parse comma-separated or repeated query params into integer IDs.
+ * Supports: categoryIds=1,2,3 | categoryId=1&categoryId=2 | categoryIds[]=1
+ */
+function parseIdListQuery(val) {
+  if (val == null || val === "") return null;
+  const raw = Array.isArray(val) ? val : String(val).split(",");
+  const ids = raw
+    .map((v) => parseInt(String(v).trim(), 10))
+    .filter((n) => !Number.isNaN(n) && n > 0);
+  return ids.length ? [...new Set(ids)] : null;
+}
+
+/** Apply min/max integer range filters from query keys minX / maxX */
+function parseIntRangeQuery(query, field, { minKey, maxKey } = {}) {
+  const minK = minKey || `min${field.charAt(0).toUpperCase()}${field.slice(1)}`;
+  const maxK = maxKey || `max${field.charAt(0).toUpperCase()}${field.slice(1)}`;
+  let min;
+  let max;
+  if (query[minK] != null && query[minK] !== "") {
+    const n = parseInt(query[minK], 10);
+    if (!Number.isNaN(n)) min = n;
+  }
+  if (query[maxK] != null && query[maxK] !== "") {
+    const n = parseInt(query[maxK], 10);
+    if (!Number.isNaN(n)) max = n;
+  }
+  if (min === undefined && max === undefined) return null;
+  const bounds = {};
+  if (min !== undefined) bounds[Op.gte] = min;
+  if (max !== undefined) bounds[Op.lte] = max;
+  return bounds;
+}
+
+function parseDateRangeQuery(query, field = "created_at") {
+  const fromKey = `${field}From`;
+  const toKey = `${field}To`;
+  const from = query[fromKey] || query.dateFrom;
+  const to = query[toKey] || query.dateTo;
+  if (!from && !to) return null;
+  const range = {};
+  if (from) range[Op.gte] = new Date(from);
+  if (to) range[Op.lte] = new Date(to);
+  return range;
+}
+
 module.exports = {
   parseListQuery,
   buildPaginatedResponse,
   searchWhere,
   coerceBoolQuery,
+  parseIdListQuery,
+  parseIntRangeQuery,
+  parseDateRangeQuery,
 };

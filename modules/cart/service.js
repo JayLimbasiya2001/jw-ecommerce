@@ -3,24 +3,9 @@
 const Model = require("./model");
 
 exports.CartService = {
-  create: async (data) => {
-    return Model.create(data);
-  },
-
-  get: async (conditions) => {
-    return Model.findAll(conditions);
-  },
-
-  findAndCountAll: async (conditions) => {
-    return Model.findAndCountAll(conditions);
-  },
-
-  update: async (data, conditions) => {
-    return Model.update(data, conditions);
-  },
-
-  remove: async (conditions) => {
-    return Model.destroy(conditions);
-  }
+  create: (data) => Model.create(data),
+  findOne: (conditions) => Model.findOne(conditions),
+  findAndCountAll: (conditions) => Model.findAndCountAll(conditions),
+  update: (data, conditions) => Model.update(data, conditions),
+  remove: (conditions) => Model.destroy(conditions),
 };
-

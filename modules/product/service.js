@@ -205,11 +205,34 @@ const SORTABLE = new Set(["id", "name", "salePrice", "basePrice", "stock", "crea
 
 /**
  * Maps GET /api/products query params → Sequelize where, order, limit, offset, page.
- * Filters: categoryId, brandId, isActive, isNewArrival, search|q|name|related (ILIKE name/slug/sku/description),
- * minPrice, maxPrice, priceField (salePrice|basePrice, default salePrice).
+ * Filters: categoryId, categoryIds, brandId, isActive, isNewArrival, search|q|name|related (ILIKE name/slug/sku/description),
+ * minPrice, maxPrice, priceField (salePrice|basePrice, default salePrice), metalTypes, inStock, startDate, endDate.
  * Pagination: page (default 1), limit (default 20, max 100).
  * Sort: sortBy, sortOrder (asc|desc).
  */
+function parseCommaSeparatedInts(raw) {
+  if (raw == null || String(raw).trim() === "") return [];
+  return String(raw)
+    .split(",")
+    .map((part) => parseInt(part.trim(), 10))
+    .filter((n) => !Number.isNaN(n));
+}
+
+function parseCommaSeparatedStrings(raw) {
+  if (raw == null || String(raw).trim() === "") return [];
+  return String(raw)
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function parseIsoDate(raw) {
+  if (raw == null || String(raw).trim() === "") return null;
+  const d = new Date(String(raw).trim());
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+}
+
 function parseProductListQuery(query = {}) {
   const where = {};
 
@@ -250,6 +273,45 @@ function parseProductListQuery(query = {}) {
   }
   if (query.stoneType != null && String(query.stoneType).trim() !== "") {
     where.stoneType = String(query.stoneType).trim();
+  }
+  if (query.isBestSeller !== undefined && query.isBestSeller !== "") {
+    const v = query.isBestSeller;
+    where.isBestSeller = v === "true" || v === true || v === "1" || v === 1;
+  }
+  if (query.isTrending !== undefined && query.isTrending !== "") {
+    const v = query.isTrending;
+    where.isTrending = v === "true" || v === true || v === "1" || v === 1;
+  }
+
+  const metalTypes = parseCommaSeparatedStrings(query.metalTypes);
+  if (metalTypes.length > 0) {
+    const metalCondition = {
+      [Op.or]: metalTypes.map((metal) => ({
+        metalType: { [Op.iLike]: metal },
+      })),
+    };
+    if (!where[Op.and]) where[Op.and] = [];
+    where[Op.and].push(metalCondition);
+  }
+
+  if (query.inStock !== undefined && query.inStock !== "") {
+    const v = query.inStock;
+    const inStock =
+      v === "true" || v === true || v === "1" || v === 1;
+    if (inStock) {
+      where.stock = { [Op.gt]: 0 };
+    }
+  }
+
+  const startDate = parseIsoDate(query.startDate);
+  if (startDate) {
+    where.created_at = where.created_at || {};
+    where.created_at[Op.gte] = startDate;
+  }
+  const endDate = parseIsoDate(query.endDate);
+  if (endDate) {
+    where.created_at = where.created_at || {};
+    where.created_at[Op.lte] = endDate;
   }
 
   const inStock = coerceBoolQuery(query.inStock);

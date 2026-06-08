@@ -27,8 +27,10 @@ const couponRouter = require("./modules/coupon");
 const customerRouter = require("./modules/customer");
 const newsletterRouter = require("./modules/newsletter");
 const paymentsRouter = require("./modules/payments");
+const contactRouter = require("./modules/contact");
 const authRouter = require("./modules/auth");
 const adminRouter = require("./modules/admin");
+const storefrontRouter = require("./modules/storefront");
 
 const path = require("path");
 const app = express();
@@ -46,6 +48,7 @@ app.get("/health", (req, res) => {
 // API routes
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/storefront", storefrontRouter);
 app.use("/api/users", userRouter);
 app.use("/api/addresses", addressRouter);
 app.use("/api/categories", categoryRouter);
@@ -63,6 +66,7 @@ app.use("/api/customers", customerRouter);
 app.use("/api/newsletters", newsletterRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/payments", paymentsRouter);
+app.use("/api/contact", contactRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/order-items", orderItemsRouter);
 app.use("/api/wishlist", wishlistRouter);

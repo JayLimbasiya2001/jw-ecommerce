@@ -103,6 +103,18 @@ exports.remove = async (req, res, next) => {
   }
 };
 
+const { Op } = require("sequelize");
+
+function buildActiveHeroWhere(extra = {}) {
+  const now = new Date();
+  return {
+    isActive: true,
+    startDate: { [Op.lte]: now },
+    endDate: { [Op.gte]: now },
+    ...extra,
+  };
+}
+
 exports.getAll = async (req, res, next) => {
   try {
     const { where, order, limit, offset, page } = parseHeroSliderListQuery(req.query);

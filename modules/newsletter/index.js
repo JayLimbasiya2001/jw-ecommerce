@@ -32,6 +32,8 @@ router.delete("/subscribers/:id", ...adminModule("newsletter"), subscriberContro
 
 /** Newsletter posts — public read (published only); write requires admin */
 router.get("/", postController.getAll);
+router.get("/slugs", postController.getSlugs);
+router.get("/by-slug/:slug", postController.getBySlug);
 router.get("/:id", postController.get);
 
 router.post(
